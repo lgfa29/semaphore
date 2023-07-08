@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,7 +23,7 @@ Hello! You will now be guided through a setup to:
 
 `
 
-func InteractiveSetup(conf *util.ConfigType) {
+func InteractiveSetup(stdin *bufio.Reader, conf *util.ConfigType) {
 	fmt.Print(interactiveSetupBlurb)
 
 	dbPrompt := `What database to use:
@@ -32,80 +33,80 @@ func InteractiveSetup(conf *util.ConfigType) {
 `
 
 	var db int
-	askValue(dbPrompt, "1", &db)
+	askValue(stdin, dbPrompt, "1", &db)
 
 	switch db {
 	case 1:
 		conf.Dialect = util.DbDriverMySQL
-		scanMySQL(conf)
+		scanMySQL(stdin, conf)
 	case 2:
 		conf.Dialect = util.DbDriverBolt
-		scanBoltDb(conf)
+		scanBoltDb(stdin, conf)
 	case 3:
 		conf.Dialect = util.DbDriverPostgres
-		scanPostgres(conf)
+		scanPostgres(stdin, conf)
 	}
 
 	defaultPlaybookPath := filepath.Join(os.TempDir(), "semaphore")
-	askValue("Playbook path", defaultPlaybookPath, &conf.TmpPath)
+	askValue(stdin, "Playbook path", defaultPlaybookPath, &conf.TmpPath)
 	conf.TmpPath = filepath.Clean(conf.TmpPath)
 
-	askValue("Web root URL (optional, see https://github.com/ansible-semaphore/semaphore/wiki/Web-root-URL)", "", &conf.WebHost)
+	askValue(stdin, "Web root URL (optional, see https://github.com/ansible-semaphore/semaphore/wiki/Web-root-URL)", "", &conf.WebHost)
 
-	askConfirmation("Enable email alerts?", false, &conf.EmailAlert)
+	askConfirmation(stdin, "Enable email alerts?", false, &conf.EmailAlert)
 	if conf.EmailAlert {
-		askValue("Mail server host", "localhost", &conf.EmailHost)
-		askValue("Mail server port", "25", &conf.EmailPort)
-		askValue("Mail sender address", "semaphore@localhost", &conf.EmailSender)
+		askValue(stdin, "Mail server host", "localhost", &conf.EmailHost)
+		askValue(stdin, "Mail server port", "25", &conf.EmailPort)
+		askValue(stdin, "Mail sender address", "semaphore@localhost", &conf.EmailSender)
 	}
 
-	askConfirmation("Enable telegram alerts?", false, &conf.TelegramAlert)
+	askConfirmation(stdin, "Enable telegram alerts?", false, &conf.TelegramAlert)
 	if conf.TelegramAlert {
-		askValue("Telegram bot token (you can get it from @BotFather)", "", &conf.TelegramToken)
-		askValue("Telegram chat ID", "", &conf.TelegramChat)
+		askValue(stdin, "Telegram bot token (you can get it from @BotFather)", "", &conf.TelegramToken)
+		askValue(stdin, "Telegram chat ID", "", &conf.TelegramChat)
 	}
 
-	askConfirmation("Enable slack alerts?", false, &conf.SlackAlert)
+	askConfirmation(stdin, "Enable slack alerts?", false, &conf.SlackAlert)
 	if conf.SlackAlert {
-		askValue("Slack Webhook URL", "", &conf.SlackUrl)
+		askValue(stdin, "Slack Webhook URL", "", &conf.SlackUrl)
 	}
 
-	askConfirmation("Enable LDAP authentication?", false, &conf.LdapEnable)
+	askConfirmation(stdin, "Enable LDAP authentication?", false, &conf.LdapEnable)
 	if conf.LdapEnable {
-		askValue("LDAP server host", "localhost:389", &conf.LdapServer)
-		askConfirmation("Enable LDAP TLS connection", false, &conf.LdapNeedTLS)
-		askValue("LDAP DN for bind", "cn=user,ou=users,dc=example", &conf.LdapBindDN)
-		askValue("Password for LDAP bind user", "pa55w0rd", &conf.LdapBindPassword)
-		askValue("LDAP DN for user search", "ou=users,dc=example", &conf.LdapSearchDN)
-		askValue("LDAP search filter", `(uid=%s)`, &conf.LdapSearchFilter)
-		askValue("LDAP mapping for DN field", "dn", &conf.LdapMappings.DN)
-		askValue("LDAP mapping for username field", "uid", &conf.LdapMappings.UID)
-		askValue("LDAP mapping for full name field", "cn", &conf.LdapMappings.CN)
-		askValue("LDAP mapping for email field", "mail", &conf.LdapMappings.Mail)
+		askValue(stdin, "LDAP server host", "localhost:389", &conf.LdapServer)
+		askConfirmation(stdin, "Enable LDAP TLS connection", false, &conf.LdapNeedTLS)
+		askValue(stdin, "LDAP DN for bind", "cn=user,ou=users,dc=example", &conf.LdapBindDN)
+		askValue(stdin, "Password for LDAP bind user", "pa55w0rd", &conf.LdapBindPassword)
+		askValue(stdin, "LDAP DN for user search", "ou=users,dc=example", &conf.LdapSearchDN)
+		askValue(stdin, "LDAP search filter", `(uid=%s)`, &conf.LdapSearchFilter)
+		askValue(stdin, "LDAP mapping for DN field", "dn", &conf.LdapMappings.DN)
+		askValue(stdin, "LDAP mapping for username field", "uid", &conf.LdapMappings.UID)
+		askValue(stdin, "LDAP mapping for full name field", "cn", &conf.LdapMappings.CN)
+		askValue(stdin, "LDAP mapping for email field", "mail", &conf.LdapMappings.Mail)
 	}
 }
 
-func scanBoltDb(conf *util.ConfigType) {
+func scanBoltDb(stdin *bufio.Reader, conf *util.ConfigType) {
 	workingDirectory, err := os.Getwd()
 	if err != nil {
 		workingDirectory = os.TempDir()
 	}
 	defaultBoltDBPath := filepath.Join(workingDirectory, "database.boltdb")
-	askValue("db filename", defaultBoltDBPath, &conf.BoltDb.Hostname)
+	askValue(stdin, "db filename", defaultBoltDBPath, &conf.BoltDb.Hostname)
 }
 
-func scanMySQL(conf *util.ConfigType) {
-	askValue("db Hostname", "127.0.0.1:3306", &conf.MySQL.Hostname)
-	askValue("db User", "root", &conf.MySQL.Username)
-	askValue("db Password", "", &conf.MySQL.Password)
-	askValue("db Name", "semaphore", &conf.MySQL.DbName)
+func scanMySQL(stdin *bufio.Reader, conf *util.ConfigType) {
+	askValue(stdin, "db Hostname", "127.0.0.1:3306", &conf.MySQL.Hostname)
+	askValue(stdin, "db User", "root", &conf.MySQL.Username)
+	askValue(stdin, "db Password", "", &conf.MySQL.Password)
+	askValue(stdin, "db Name", "semaphore", &conf.MySQL.DbName)
 }
 
-func scanPostgres(conf *util.ConfigType) {
-	askValue("db Hostname", "127.0.0.1:5432", &conf.Postgres.Hostname)
-	askValue("db User", "root", &conf.Postgres.Username)
-	askValue("db Password", "", &conf.Postgres.Password)
-	askValue("db Name", "semaphore", &conf.Postgres.DbName)
+func scanPostgres(stdin *bufio.Reader, conf *util.ConfigType) {
+	askValue(stdin, "db Hostname", "127.0.0.1:5432", &conf.Postgres.Hostname)
+	askValue(stdin, "db User", "root", &conf.Postgres.Username)
+	askValue(stdin, "db Password", "", &conf.Postgres.Password)
+	askValue(stdin, "db Name", "semaphore", &conf.Postgres.DbName)
 	if conf.Postgres.Options == nil {
 		conf.Postgres.Options = make(map[string]string)
 	}
@@ -120,7 +121,7 @@ func scanErrorChecker(n int, err error) {
 	}
 }
 
-func SaveConfig(config *util.ConfigType) (configPath string) {
+func SaveConfig(stdin *bufio.Reader, config *util.ConfigType) (configPath string) {
 	configDirectory, err := os.Getwd()
 	if err != nil {
 		configDirectory, err = os.UserConfigDir()
@@ -130,7 +131,7 @@ func SaveConfig(config *util.ConfigType) (configPath string) {
 		}
 		configDirectory = filepath.Join(configDirectory, "semaphore")
 	}
-	askValue("Config output directory", configDirectory, &configDirectory)
+	askValue(stdin, "Config output directory", configDirectory, &configDirectory)
 
 	fmt.Printf("Running: mkdir -p %v..\n", configDirectory)
 
@@ -159,7 +160,7 @@ func SaveConfig(config *util.ConfigType) (configPath string) {
 	return
 }
 
-func AskConfigConfirmation(config *util.ConfigType) bool {
+func AskConfigConfirmation(stdin *bufio.Reader, config *util.ConfigType) bool {
 	bytes, err := config.ToJSON()
 	if err != nil {
 		panic(err)
@@ -168,11 +169,11 @@ func AskConfigConfirmation(config *util.ConfigType) bool {
 	fmt.Printf("\nGenerated configuration:\n %v\n\n", string(bytes))
 
 	var correct bool
-	askConfirmation("Is this correct?", true, &correct)
+	askConfirmation(stdin, "Is this correct?", true, &correct)
 	return correct
 }
 
-func askValue(prompt string, defaultValue string, item interface{}) {
+func askValue(stdin *bufio.Reader, prompt string, defaultValue string, item interface{}) {
 	// Print prompt with optional default value
 	fmt.Print(prompt)
 	if len(defaultValue) != 0 {
@@ -182,13 +183,22 @@ func askValue(prompt string, defaultValue string, item interface{}) {
 
 	_, _ = fmt.Sscanln(defaultValue, item)
 
-	scanErrorChecker(fmt.Scanln(item))
+	switch v := item.(type) {
+	case *string:
+		str, _ := stdin.ReadString('\n')
+		str = strings.TrimSpace(str)
+		if len(str) > 0 {
+			*v = str
+		}
+	default:
+		scanErrorChecker(fmt.Fscanln(stdin, item))
+	}
 
 	// Empty line after prompt
 	fmt.Println("")
 }
 
-func askConfirmation(prompt string, defaultValue bool, item *bool) {
+func askConfirmation(stdin *bufio.Reader, prompt string, defaultValue bool, item *bool) {
 	defString := "yes"
 	if !defaultValue {
 		defString = "no"
@@ -198,7 +208,7 @@ func askConfirmation(prompt string, defaultValue bool, item *bool) {
 
 	var answer string
 
-	scanErrorChecker(fmt.Scanln(&answer))
+	scanErrorChecker(fmt.Fscanln(stdin, &answer))
 
 	switch strings.ToLower(answer) {
 	case "y", "yes":
